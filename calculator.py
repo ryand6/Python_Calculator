@@ -1,3 +1,4 @@
+from codecs import oem_decode
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -17,8 +18,9 @@ class MyWindow(QMainWindow):
         self.printed_nums = ""
         self.decimal = False
         self.negative = False
-        self.operator_pressed = False
+        self.answer = None
         self.last_operator_pressed = None
+        self.equals_button_clicked = False
 
     def initUI(self):
         self.label = QLabel(self)
@@ -369,17 +371,9 @@ class MyWindow(QMainWindow):
             }""")
 
     def clicked_num(self):
-        button = self.sender()    
+        button = self.sender() 
 
-        if self.operator_pressed:
-            self.numbers = float(self.printed_nums.replace(",", ""))
-            self.temp_numbers = []
-            self.reset_operator_button_colour()
-            self.operator_pressed = False
-            self.decimal = False
-
-        if len(self.temp_numbers) == 0 and button.text() == "0":
-            return None
+        self.reset_operator_button_colour()
 
         self.resize_label(self.temp_numbers)
 
@@ -429,53 +423,69 @@ class MyWindow(QMainWindow):
                 self.label.setText("0")
 
     def clicked_divide(self):
-        self.operator_pressed = True
-        if self.last_operator_pressed:
-            self.clicked_equals()
+        if self.last_operator_pressed and self.equals_button_clicked == False:
+            self.calculate_without_equals_button()
+        self.reset_operator_button_colour()
         self.last_operator_pressed = "divide"
         self.active_operator_button_colour()
+        self.reset_temp_numbers()
 
     def clicked_multiply(self):
-        self.operator_pressed = True
-        if self.last_operator_pressed:
-            self.clicked_equals()
+        if self.last_operator_pressed and self.equals_button_clicked == False:
+            self.calculate_without_equals_button()
+        self.reset_operator_button_colour()
         self.last_operator_pressed = "multiply"
         self.active_operator_button_colour()
+        self.reset_temp_numbers()
 
     def clicked_minus(self):
-        self.operator_pressed = True
-        if self.last_operator_pressed:
-            self.clicked_equals()
+        if self.last_operator_pressed and self.equals_button_clicked == False:
+            self.calculate_without_equals_button()
+        self.reset_operator_button_colour()
         self.last_operator_pressed = "subtract"
         self.active_operator_button_colour()
+        self.reset_temp_numbers()
 
     def clicked_plus(self):
-        self.operator_pressed = True
-        if self.last_operator_pressed:
-            self.clicked_equals()
+        if self.last_operator_pressed and self.equals_button_clicked == False:
+            self.calculate_without_equals_button()
+        self.equals_button_clicked = False
+        self.reset_operator_button_colour()
         self.last_operator_pressed = "add"
         self.active_operator_button_colour()
+        self.reset_temp_numbers()
 
     def clicked_equals(self):
-        if not self.numbers:
-            return None
+        if self.numbers is None:
+            return
+
+        self.equals_button_clicked = True
 
         self.reset_operator_button_colour()
 
-        divide_answer = multiply_answer = addition_answer = subtraction_answer = False
+        divide_answer = multiply_answer = addition_answer = subtraction_answer = None
+
+        old_printed_nums = self.printed_nums
+        operation_number = float(self.printed_nums.replace(",", ""))
 
         if self.last_operator_pressed == "divide":
-            divide_answer = self.numbers / float("".join(self.temp_numbers))
+            divide_answer = self.numbers / operation_number
         elif self.last_operator_pressed == "multiply":
-            multiply_answer = self.numbers * float("".join(self.temp_numbers))
+            multiply_answer = self.numbers * operation_number
         elif self.last_operator_pressed == "subtract":
-            subtraction_answer = self.numbers - float("".join(self.temp_numbers))
+            subtraction_answer = self.numbers - operation_number
         elif self.last_operator_pressed == "add":
-            addition_answer = self.numbers + float("".join(self.temp_numbers))
+            addition_answer = self.numbers + operation_number
 
         for answer in [divide_answer, multiply_answer, subtraction_answer, addition_answer]:
-            if answer != False:
-                if answer < 0.00000001 or answer > 999999999:
+            if answer is None:
+                pass
+            else:
+                if answer == 0.0:
+                    self.printed_nums = "0"
+                elif answer > 0 and (answer < 0.00000001 or answer > 999999999):
+                    self.printed_nums = str("{:e}".format(answer))
+                elif answer < 0 and (answer > -0.00000001 or answer < -999999999):
                     self.printed_nums = str("{:e}".format(answer))
                 else:
                     nums_before_rounding, _ = self.split_decimal_num(list(str(answer)))
@@ -486,12 +496,33 @@ class MyWindow(QMainWindow):
                         self.printed_nums = "".join(self.add_commas(nums)) + "." + "".join(decimals)
                 self.resize_label(self.printed_nums)
                 self.label.setText(self.printed_nums)
-                self.last_operator_pressed = False
+                self.answer = float(self.printed_nums.replace(",", ""))
+                self.numbers = self.answer
+                self.printed_nums = old_printed_nums
+                self.temp_numbers = []
+    
+    def reset_temp_numbers(self):
+        if not self.answer:
+            if len(self.temp_numbers) > 0:
+                # store first number entered in a new variable and reset temp_numbers so it can store new number
+                self.numbers = float(self.printed_nums.replace(",", ""))
+            else:
+                self.numbers = 0
+        self.temp_numbers = []
+        self.decimal = False
+
+    def calculate_without_equals_button(self):
+        self.clicked_equals()
+        self.equals_button_clicked = False
 
     def split_decimal_num(self, num):
-        decimal_index = num.index(".")
-        nums = num[:decimal_index]
-        decimals = num[decimal_index + 1:]
+        if "." in num:
+            decimal_index = num.index(".")
+            nums = num[:decimal_index]
+            decimals = num[decimal_index + 1:]
+        else:
+            nums = num
+            decimals = ["0"]
         return nums, decimals  
 
     def add_commas(self, nums):
@@ -609,5 +640,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MyWindow()
     window.show()
-    print(window.temp_numbers)
+    answer = (float(0)/float(3))
+    print(answer == 0.0)
     sys.exit(app.exec())
