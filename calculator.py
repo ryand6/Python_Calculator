@@ -436,19 +436,34 @@ class MyWindow(QMainWindow):
 
     def clicked_percentage(self):
         self.percentage_pressed = True
-        if self.operator_button_active == False and (self.printed_nums != [] and self.temp_numbers != ["0", "."]):
+        if self.printed_nums in ["", "0", "0.", "0.0"]:
+            return
+        float_nums = self.clean_printed_nums(self.printed_nums)
+        if (self.operator_button_active == False and (self.temp_numbers != [] and self.temp_numbers != ["0", "."])):
             if "e" in self.printed_nums:
                 float_nums = float(self.printed_nums) / 100
             else:
-                float_nums = self.clean_printed_nums(self.printed_nums) / 100
-            if float_nums == 0.0:
-                self.printed_nums = "0"
-            elif (float_nums > 0 and (float_nums < 0.00000001 or float_nums > 999999999)) or (float_nums < 0 and (float_nums > -0.00000001 or float_nums < -999999999)):
+                float_nums = float_nums / 100
+            if (float_nums > 0 and (float_nums < 0.00000001 or float_nums > 999999999)) or (float_nums < 0 and (float_nums > -0.00000001 or float_nums < -999999999)):
                 self.printed_nums = str("{:e}".format(float_nums))
             else:
                 self.convert_float_to_printed_nums(float_nums)
-            self.resize_label(self.printed_nums)
-            self.label.setText(self.printed_nums)
+        elif self.operator_button_active == True:
+            if self.numbers:
+                float_nums = self.numbers
+            if self.last_operator_pressed == "divide" or self.last_operator_pressed == "multiply":
+                float_nums = float_nums / 100
+            if self.last_operator_pressed == "add" or self.last_operator_pressed == "subtract":
+                if "e" in self.printed_nums:
+                    float_nums = float(self.printed_nums) * (float(self.printed_nums) / 100)
+                else:
+                    float_nums = float_nums * (float_nums / 100)
+            if (float_nums > 0 and (float_nums < 0.00000001 or float_nums > 999999999)) or (float_nums < 0 and (float_nums > -0.00000001 or float_nums < -999999999)):
+                self.printed_nums = str("{:e}".format(float_nums))
+            else:
+                self.convert_float_to_printed_nums(float_nums)
+        self.resize_label(self.printed_nums)
+        self.label.setText(self.printed_nums)
 
     def clicked_divide(self):
         if self.operator_button_active == False and self.equals_button_clicked == False:
@@ -515,15 +530,16 @@ class MyWindow(QMainWindow):
             else:
                 if answer == 0.0:
                     self.printed_nums = "0"
-                elif answer > 0 and (answer < 0.00000001 or answer > 999999999):
+                elif (answer > 0 and (answer < 0.00000001 or answer > 999999999)) or (answer < 0 and (answer > -0.00000001 or answer < -999999999)):
                     self.printed_nums = str("{:e}".format(answer))
-                elif answer < 0 and (answer > -0.00000001 or answer < -999999999):
-                    self.printed_nums = str("{:e}".format(answer))
+                    self.answer = float(self.printed_nums)
                 else:
                     self.convert_float_to_printed_nums(answer)
+                    self.answer = self.clean_printed_nums(self.printed_nums)
+                    if "e" in self.printed_nums:
+                        self.printed_nums = "{:.8f}".format(float(self.printed_nums))
                 self.resize_label(self.printed_nums)
                 self.label.setText(self.printed_nums)
-                self.answer = self.clean_printed_nums(self.printed_nums)
                 self.numbers = self.answer
                 self.printed_nums = old_printed_nums
                 self.temp_numbers = []
@@ -541,16 +557,25 @@ class MyWindow(QMainWindow):
         self.negative = False
 
     def convert_float_to_printed_nums(self, float_nums):
-        nums_before_rounding, _ = self.split_decimal_num(list(str(float_nums)))
-        nums, decimals = self.split_decimal_num(list(str(round(float_nums, (9 - len(nums_before_rounding))))))
+        if "e" in str(float_nums):
+            float_nums = "{:e}".format(float_nums)
+        else:
+            float_nums = "{:.8f}".format(float_nums)
+        nums_before_rounding, _ = self.split_decimal_num(list(float_nums))
+        if "-" in nums_before_rounding:
+            # remove minus element so that it's not included in the length of the list figure used to round float_nums
+            nums_before_rounding.remove("-")  
+        nums, decimals = self.split_decimal_num(list(str(round(float(float_nums), (9 - len(nums_before_rounding))))))
         if len(decimals) == 0 or "".join(decimals) == "0":
             self.printed_nums = "".join(self.add_commas(nums))
         else:
             self.printed_nums = "".join(self.add_commas(nums)) + "." + "".join(decimals)
 
     def clean_printed_nums(self, nums):
+        if "e" in nums:
+            return float(nums)
         amended_nums = nums.replace(",", "")
-        if "-" in nums:
+        if "-" in nums[0]:
             return -float(amended_nums.replace("-", ""))
         else:
             return float(amended_nums)
