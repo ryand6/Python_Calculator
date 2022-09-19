@@ -39,13 +39,21 @@ class MyWindow(QMainWindow):
         self.ac_button.setText("AC")
         self.ac_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.ac_button.setGeometry(50, 400, 120, 120)
+        self.ac_button.clicked.connect(self.clicked_ac_button)
         self.ac_button.setStyleSheet("""
+            QPushButton
+            {
             color: 'black';
             font-size: 50px;
             border-radius: 60;
             border: 2px solid grey;
             background-color: grey;
-            """)
+            }"""
+            """QPushButton:pressed
+            {
+            border: 2px solid white;
+            background-color: white;
+            }""")
 
         self.plus_minus_button = QPushButton(self)
         self.plus_minus_button.setText("+/–")
@@ -73,12 +81,19 @@ class MyWindow(QMainWindow):
         self.percentage_button.setGeometry(350, 400, 120, 120)
         self.percentage_button.clicked.connect(self.clicked_percentage)
         self.percentage_button.setStyleSheet("""
+            QPushButton
+            {
             color: 'black';
             font-size: 50px;
             border-radius: 60;
             border: 2px solid grey;
             background-color: grey;
-            """)
+            }"""
+            """QPushButton:pressed
+            {
+            border: 2px solid white;
+            background-color: white;
+            }""")
 
         self.divide_button = QPushButton(self)
         self.divide_button.setText("÷")
@@ -381,6 +396,8 @@ class MyWindow(QMainWindow):
 
         self.resize_label(self.temp_numbers)
 
+        self.ac_button.setText("C")
+
         if self.percentage_pressed:
             self.percentage_pressed = False
             self.temp_numbers = []
@@ -405,6 +422,31 @@ class MyWindow(QMainWindow):
             self.label.setText(self.printed_nums)
         else:
             self.label.setText(self.printed_nums)
+
+    def clicked_ac_button(self):
+        if self.ac_button.text() == "AC":
+            self.temp_numbers = []
+            self.numbers = None
+            self.printed_nums = ""
+            self.decimal = False
+            self.negative = False
+            self.answer = None
+            self.reset_operator_button_colour()
+            self.last_operator_pressed = None
+            self.equals_button_clicked = False
+            self.operator_button_active = False
+            self.percentage_pressed = False
+            self.label.setText("0")
+        elif self.ac_button.text() == "C":
+            self.ac_button.setText("AC")
+            self.temp_numbers = list(str(self.numbers))
+            self.convert_float_to_printed_nums(self.numbers)
+            if not self.answer:
+                self.last_operator_pressed = None
+            else:
+                self.numbers = 0
+            self.label.setText("0")
+            self.active_operator_button_colour()
 
     def clicked_decimal(self):
         if "." not in self.temp_numbers:
@@ -466,39 +508,42 @@ class MyWindow(QMainWindow):
         self.label.setText(self.printed_nums)
 
     def clicked_divide(self):
-        if self.operator_button_active == False and self.equals_button_clicked == False:
-            self.calculate_without_equals_button()
+        if self.equals_button_clicked == False:
+            self.clicked_equals()
         self.reset_operator_button_colour()
         self.last_operator_pressed = "divide"
         self.active_operator_button_colour()
-        self.reset_temp_numbers()
         self.operator_button_active = True
+        self.equals_button_clicked = False
+        self.reset_temp_numbers()
 
     def clicked_multiply(self):
-        if self.operator_button_active == False and self.equals_button_clicked == False:
-            self.calculate_without_equals_button()
+        if self.equals_button_clicked == False:
+            self.clicked_equals()
         self.reset_operator_button_colour()
         self.last_operator_pressed = "multiply"
         self.active_operator_button_colour()
-        self.reset_temp_numbers()
         self.operator_button_active = True
+        self.equals_button_clicked = False
+        self.reset_temp_numbers()
 
     def clicked_minus(self):
-        if self.operator_button_active == False and self.equals_button_clicked == False:
-            self.calculate_without_equals_button()
+        if self.equals_button_clicked == False:
+            self.clicked_equals()
         self.reset_operator_button_colour()
         self.last_operator_pressed = "subtract"
         self.active_operator_button_colour()
-        self.reset_temp_numbers()
+        self.equals_button_clicked = False
         self.operator_button_active = True
+        self.reset_temp_numbers()
 
     def clicked_plus(self):
-        if self.operator_button_active == False and self.equals_button_clicked == False:
-            self.calculate_without_equals_button()
-        self.equals_button_clicked = False
+        if self.equals_button_clicked == False:
+            self.clicked_equals()
         self.reset_operator_button_colour()
         self.last_operator_pressed = "add"
         self.active_operator_button_colour()
+        self.equals_button_clicked = False
         self.reset_temp_numbers()
         self.operator_button_active = True
 
@@ -514,6 +559,19 @@ class MyWindow(QMainWindow):
 
         old_printed_nums = self.printed_nums
         operation_number = self.clean_printed_nums(self.printed_nums)
+
+        # handle if "C" button is pressed before any value is passed to self.answer
+        if not self.last_operator_pressed:
+            print("True")
+            print(self.numbers)
+            self.convert_float_to_printed_nums(self.numbers)
+            self.answer = self.clean_printed_nums(self.printed_nums)
+            self.resize_label(self.printed_nums)
+            self.label.setText(self.printed_nums)
+            self.numbers = None
+            self.answer = None
+            self.negative = False
+            return
 
         if self.last_operator_pressed == "divide":
             divide_answer = self.numbers / operation_number
@@ -547,6 +605,8 @@ class MyWindow(QMainWindow):
                 self.operator_button_active = False
     
     def reset_temp_numbers(self):
+        if self.answer and self.equals_button_clicked and not self.operator_button_active:
+            self.numbers = self.clean_printed_nums(self.printed_nums)
         if not self.answer:
             if len(self.temp_numbers) > 0:
                 self.numbers = self.clean_printed_nums(self.printed_nums)
