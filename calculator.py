@@ -8,7 +8,6 @@ import copy
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
-        # self.setGeometry(300, 50, 680, 1200)
         self.setFixedWidth(680)
         self.setFixedHeight(1200)
         self.setStyleSheet("background: black;")
@@ -26,6 +25,8 @@ class MyWindow(QMainWindow):
         self.operator_button_active = False
         self.percentage_pressed = False
         self.number_overwritten = False
+        self.pressed_c_before_equation = False
+        self.pressed_c_after_equation = False
 
     def initUI(self):
         self.label = QLabel(self)
@@ -396,8 +397,9 @@ class MyWindow(QMainWindow):
         self.reset_operator_button_colour()
         self.resize_label(self.temp_numbers)
         self.ac_button.setText("C")
+        self.pressed_c_before_equation = False
 
-        if self.answer and self.equals_button_clicked and not self.operator_button_active:
+        if self.answer and self.equals_button_clicked and not self.operator_button_active and not self.pressed_c_after_equation:
             self.number_overwritten = True
 
         if self.percentage_pressed:
@@ -407,9 +409,11 @@ class MyWindow(QMainWindow):
         if len(self.temp_numbers) == 0 and button.text() == "0":
             return
 
+        # each time number is clicked, add a new number to self.temp_numbers whilst the length of the number is below the max length of 9 digits
         if len(self.temp_numbers) < 9 and self.decimal == False:
             self.temp_numbers += button.text()         
         
+        # handle the 9 digit number length when decimals are present
         if self.decimal:
             nums, decimals = self.split_decimal_num(self.temp_numbers)
             if len(nums) + len(decimals) < 9:
@@ -428,7 +432,19 @@ class MyWindow(QMainWindow):
         else:
             self.label.setText(self.printed_nums)
 
+        if self.pressed_c_after_equation and not self.answer:
+            self.numbers = self.clean_printed_nums(self.printed_nums)
+            self.answer = self.numbers
+            self.printed_nums = self.old_printed_nums
+
+        # print("CLICKED NUM")
+        # print(f"self.temp_numbers: {self.temp_numbers}")
+        # print(f"self.numbers: {self.numbers}")
+        # print(f"self.printed_nums: {self.printed_nums}")
+        # print(f"self.answer: {self.answer}\n\n")
+
     def clicked_ac_button(self):
+        # reset all variable if "AC" is clicked
         if self.ac_button.text() == "AC":
             self.temp_numbers = []
             self.numbers = None
@@ -443,21 +459,45 @@ class MyWindow(QMainWindow):
             self.percentage_pressed = False
             self.resize_label("0")
             self.label.setText("0")
+            self.pressed_c_before_equation = False
+        # if "C" is clicked, change button text to "AC" 
         elif self.ac_button.text() == "C":
             self.ac_button.setText("AC")
+            if self.numbers is None:
+                # if a number hasn't been passed to self.numbers yet, clear screen and reset variables
+                self.printed_nums = ""
+                self.resize_label("0")
+                self.label.setText("0")
+                self.temp_numbers = []
+                return
             self.temp_numbers = list(str(self.numbers))
             self.convert_float_to_printed_nums(self.numbers)
-            if not self.answer:
-                self.last_operator_pressed = None
+            self.temp_numbers = []
+            # if no equation has been calculated, 
+            if self.pressed_c_after_equation or self.answer is None:
                 self.active_operator_button_colour()
+                self.pressed_c_before_equation = True
+                self.pressed_c_after_equation = False
+            # if equation has been calculated, reset self.numbers to 0 but retain number previously used as operation number
             else:
                 self.numbers = 0
-                self.answer = None
+                self.printed_nums = self.old_printed_nums
                 self.reset_operator_button_colour()
+                self.pressed_c_after_equation = True
             self.resize_label("0")
             self.label.setText("0")
+            self.answer = None
+
+            # print("CLICKED C")
+            # print(f"self.temp_numbers: {self.temp_numbers}")
+            # print(f"self.numbers: {self.numbers}")
+            # print(f"self.printed_nums: {self.printed_nums}")
+            # print(f"self.last_operator_pressed: {self.last_operator_pressed}")
+            # print(f"self.old_printed_nums: {self.old_printed_nums}")
+            # print(f"self.answer: {self.answer}\n\n")
 
     def clicked_decimal(self):
+        # add a decimal point when clicked if there isn't already a decimal
         if "." not in self.temp_numbers:
             if len(self.temp_numbers) == 0:
                 self.temp_numbers += "0"
@@ -468,15 +508,24 @@ class MyWindow(QMainWindow):
             self.printed_nums = "".join(nums_with_commas) + "."
             self.label.setText(self.printed_nums)
 
+            # print("CLICKED DECIMAL")
+            # print(f"self.temp_numbers: {self.temp_numbers}")
+            # print(f"self.numbers: {self.numbers}")
+            # print(f"self.printed_nums: {self.printed_nums}")
+            # print(f"self.answer: {self.answer}\n\n")
+
     def clicked_plus_minus(self):
+        # if user presses plus/minus button before typing a second number following an operator button, display "-0" which will change to "-{user entered number}" once the user enters a number
         if self.operator_button_active == True:
             self.negative = True
             self.label.setText("-0")
             return
+        # if number is already negative, make it positive
         if "-" in self.label.text():
             self.negative = False
             self.label.setText(self.label.text().replace("-", ""))
         else:
+            # is number is positive, make it negative
             self.negative = True
             if len(self.temp_numbers) != 0 or self.answer:
                 self.label.setText("-" + self.label.text())
@@ -484,12 +533,29 @@ class MyWindow(QMainWindow):
                 self.label.setText("-0")
             if self.answer:
                 self.numbers = -self.numbers
+                self.answer = self.numbers
+
+        # print("CLICKED PLUS/MINUS")
+        # print(f"self.temp_numbers: {self.temp_numbers}")
+        # print(f"self.numbers: {self.numbers}")
+        # print(f"self.printed_nums: {self.printed_nums}")
+        # print(f"self.answer: {self.answer}\n\n")
 
     def clicked_percentage(self):
         self.percentage_pressed = True
+        # if a sum has just been calculated, divide the answer of that sum by 100
+        if self.equals_button_clicked and not self.operator_button_active:
+            self.convert_float_to_printed_nums(self.answer / 100)
+            self.resize_label(self.printed_nums)
+            self.label.setText(self.printed_nums)
+            self.numbers = self.clean_printed_nums(self.printed_nums)
+            self.printed_nums = self.old_printed_nums
+            return
+        # return number if number is 0 as it can't be divided
         if self.printed_nums in ["", "0", "0.", "0.0"]:
             return
         float_nums = self.clean_printed_nums(self.printed_nums)
+        # last button clicked was a number, divide this number by 100
         if (self.operator_button_active == False and (self.temp_numbers != [] and self.temp_numbers != ["0", "."])):
             if "e" in self.printed_nums:
                 float_nums = float(self.printed_nums) / 100
@@ -499,6 +565,7 @@ class MyWindow(QMainWindow):
                 self.printed_nums = str("{:e}".format(float_nums))
             else:
                 self.convert_float_to_printed_nums(float_nums)
+        # if the last button pressed was an operator button
         elif self.operator_button_active == True:
             if self.numbers:
                 float_nums = self.numbers
@@ -516,7 +583,14 @@ class MyWindow(QMainWindow):
         self.resize_label(self.printed_nums)
         self.label.setText(self.printed_nums)
 
+        # print("CLICKED PERCENTAGE")
+        # print(f"self.temp_numbers: {self.temp_numbers}")
+        # print(f"self.numbers: {self.numbers}")
+        # print(f"self.printed_nums: {self.printed_nums}")
+        # print(f"self.answer: {self.answer}\n\n")
+
     def clicked_divide(self):
+        # calculate answer without having to click equals button after one of the operator buttons has been clicked atleast once
         if self.equals_button_clicked == False and self.operator_button_active == False:
             self.clicked_equals()
         self.reset_operator_button_colour()
@@ -557,13 +631,19 @@ class MyWindow(QMainWindow):
         self.equals_button_clicked = False
 
     def clicked_equals(self):
+        # if no second number had been entered, don't carry out function
         if self.numbers is None:
             return
 
         self.equals_button_clicked = True
+        self.pressed_c_after_equation = False
         self.reset_operator_button_colour()
         divide_answer = multiply_answer = addition_answer = subtraction_answer = None
 
+        """if number has been overwritten, retrieve the number last used in the previous equation as the current operation number, therefore if 
+        the number is overwritten but no new operator or operation number is clicked in, you can apply the previous operation to the new number
+         - for instance if a new number is typed but the previous operation added 5 each time equals was clicked, then 5 would still be added to this
+         newly overwritten number each time the equals button is clicked"""
         if self.number_overwritten:
             operation_number = self.clean_printed_nums(self.old_printed_nums)
             self.numbers = self.clean_printed_nums(self.printed_nums)
@@ -573,17 +653,24 @@ class MyWindow(QMainWindow):
             operation_number = self.clean_printed_nums(self.printed_nums)
 
         # handle if "C" button is pressed before any value is passed to self.answer
-        if not self.last_operator_pressed:
-            print(self.numbers)
+        if self.pressed_c_before_equation:
             self.convert_float_to_printed_nums(self.numbers)
-            self.answer = self.clean_printed_nums(self.printed_nums)
             self.resize_label(self.printed_nums)
             self.label.setText(self.printed_nums)
-            self.numbers = None
-            self.answer = None
+            self.answer = self.numbers
             self.negative = False
+            self.pressed_c_before_equation = False
+            self.last_operator_pressed = None
+
+            # print("CLICKED EQUALS AFTER C IS PRESSED WITH NO ANSWER TO EQUATION PASSED")
+            # print(f"self.temp_numbers: {self.temp_numbers}")
+            # print(f"self.numbers: {self.numbers}")
+            # print(f"self.printed_nums: {self.printed_nums}")
+            # print(f"self.answer: {self.answer}\n\n")
+
             return
 
+        # carry out operation depending on which operator was clicked
         if self.last_operator_pressed == "divide":
             divide_answer = self.numbers / operation_number
         elif self.last_operator_pressed == "multiply":
@@ -594,11 +681,13 @@ class MyWindow(QMainWindow):
             addition_answer = self.numbers + operation_number
 
         for answer in [divide_answer, multiply_answer, subtraction_answer, addition_answer]:
+            # if not the correct operator, go to next iteration
             if answer is None:
                 pass
             else:
                 if answer == 0.0:
                     self.printed_nums = "0"
+                # if number is outside of the 9 digits boundary, convert the number to scientific notation
                 elif (answer > 0 and (answer < 0.00000001 or answer > 999999999)) or (answer < 0 and (answer > -0.00000001 or answer < -999999999)):
                     self.printed_nums = str("{:e}".format(answer))
                     self.answer = float(self.printed_nums)
@@ -606,7 +695,10 @@ class MyWindow(QMainWindow):
                     self.convert_float_to_printed_nums(answer)
                     self.answer = self.clean_printed_nums(self.printed_nums)
                     if "e" in self.printed_nums:
+                        """as Python automatically converts numbers to scientific notation a lot sooner than this calculator should, convert any numbers in scientific notation that aren#'t outside 
+                        the 9 digit number length when in normal notation back to a float"""
                         self.printed_nums = "{:.8f}".format(float(self.printed_nums))
+                # reset various variables once answer has been calculated and printed to the screen
                 self.resize_label(self.printed_nums)
                 self.label.setText(self.printed_nums)
                 self.numbers = self.answer
@@ -614,20 +706,37 @@ class MyWindow(QMainWindow):
                 self.temp_numbers = []
                 self.negative = False
                 self.operator_button_active = False
+
+                # print("CLICKED EQUALS")
+                # print(f"self.temp_numbers: {self.temp_numbers}")
+                # print(f"self.numbers: {self.numbers}")
+                # print(f"self.printed_nums: {self.printed_nums}")
+                # print(f"self.old_printed_nums: {self.old_printed_nums}")
+                # print(f"self.last_operator_pressed: {self.last_operator_pressed}")
+                # print(f"self.answer: {self.answer}\n\n")
     
     def reset_temp_numbers(self):
+        # if user types over a number that's given as an answer to their previous equation, store the overwritten number in self.numbers to be used for the next equation
         if self.number_overwritten:
             self.numbers = self.clean_printed_nums(self.printed_nums)
             self.answer = self.numbers
             self.number_overwritten = False
-        if not self.answer:
+        # if no equation has been solved yet but a second number has been entered after use of an operator for instance, store the first number in self.numbers so that it can be used in the equation
+        if self.answer is None:
             if len(self.temp_numbers) > 0:
                 self.numbers = self.clean_printed_nums(self.printed_nums)
             else:
                 self.numbers = 0
+        # reset variables used for next number typed
         self.temp_numbers = []
         self.decimal = False
         self.negative = False
+
+        # print("RESET TEMP NUMBERS")
+        # print(f"self.temp_numbers: {self.temp_numbers}")
+        # print(f"self.numbers: {self.numbers}")
+        # print(f"self.printed_nums: {self.printed_nums}")
+        # print(f"self.answer: {self.answer}\n\n")
 
     def convert_float_to_printed_nums(self, float_nums):
         if "e" in str(float_nums):
@@ -637,27 +746,29 @@ class MyWindow(QMainWindow):
         nums_before_rounding, _ = self.split_decimal_num(list(float_nums))
         if "-" in nums_before_rounding:
             # remove minus element so that it's not included in the length of the list figure used to round float_nums
-            nums_before_rounding.remove("-")  
+            nums_before_rounding.remove("-")
+        # split the number once it's been rounded so that there's a maximum of 9 digits present in the number  
         nums, decimals = self.split_decimal_num(list(str(round(float(float_nums), (9 - len(nums_before_rounding))))))
+        # if no decimal number is present, just add commas to the number converted into a string, otherwise join with the string of the decimal number
         if len(decimals) == 0 or "".join(decimals) == "0":
             self.printed_nums = "".join(self.add_commas(nums))
         else:
             self.printed_nums = "".join(self.add_commas(nums)) + "." + "".join(decimals)
 
     def clean_printed_nums(self, nums):
+        # if string shows number in scientific notation, keep the same
         if "e" in nums:
             return float(nums)
+        # remove all added commas so that the number can be converted into float
         amended_nums = nums.replace(",", "")
+        # if the string represents a negative number, convert it to a negative float
         if "-" in nums[0]:
             return -float(amended_nums.replace("-", ""))
         else:
             return float(amended_nums)
 
-    def calculate_without_equals_button(self):
-        self.clicked_equals()
-        self.equals_button_clicked = False
-
     def split_decimal_num(self, num):
+        # split number into two lists based on the index of the decimal if it exists
         if "." in num:
             decimal_index = num.index(".")
             nums = num[:decimal_index]
@@ -668,16 +779,21 @@ class MyWindow(QMainWindow):
         return nums, decimals  
 
     def add_commas(self, nums):
+        # if number is in scientific notation, don't add commas
         if "e" in nums:
             return nums
+        # add comma 4 elements from the end of the list
         if len(nums) > 3 and nums.count(",") == 0:
             nums.insert(len(nums) - 3, ",")
+        # if comma already exists but list had grown, get the index of the initial comma, remove said comma and replace with new comma at 4th element from the end of the list
         elif len(nums) > 3 and nums.count(",") > 0:
             index_pos_first = nums.index(",", (len(nums) - 5))
             first_comma = nums.pop(index_pos_first)
             nums.insert(len(nums) - 3, first_comma)
+        # add second comma 8 elements from the end of the list if length of numbers above 7 
         if len(nums) > 7 and nums.count(",") == 1:
             nums.insert(len(nums) - 7, ",")
+        # if second comma already exists but list had grown, get the index of the second comma, remove said comma and replace with new comma at 8th element from the end of the list
         elif len(nums) > 7 and nums.count(",") > 1:
             index_pos_second = nums.index(",", 0, (len(nums) - 6))
             second_comma = nums.pop(index_pos_second)
@@ -685,6 +801,7 @@ class MyWindow(QMainWindow):
         return nums
 
     def resize_label(self, nums):
+        # resize the labels font size based on the number of characters present
         if len(nums) < 5:
             self.label.setStyleSheet("""
             font-size: 120px;
@@ -712,6 +829,7 @@ class MyWindow(QMainWindow):
             """)    
 
     def active_operator_button_colour(self):
+        # change operator button colour to show that the operator is now active
         if self.last_operator_pressed == "divide":
             self.divide_button.setStyleSheet("""
             color: 'orange';
@@ -746,6 +864,7 @@ class MyWindow(QMainWindow):
             """)
 
     def reset_operator_button_colour(self):
+        # return operator button colour to default to show that the operator is no longer active
         self.operator_button_active = False
 
         if self.last_operator_pressed == "divide":
