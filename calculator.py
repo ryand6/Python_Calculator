@@ -437,11 +437,11 @@ class MyWindow(QMainWindow):
             self.answer = self.numbers
             self.printed_nums = self.old_printed_nums
 
-        # print("CLICKED NUM")
-        # print(f"self.temp_numbers: {self.temp_numbers}")
-        # print(f"self.numbers: {self.numbers}")
-        # print(f"self.printed_nums: {self.printed_nums}")
-        # print(f"self.answer: {self.answer}\n\n")
+        print("CLICKED NUM")
+        print(f"self.temp_numbers: {self.temp_numbers}")
+        print(f"self.numbers: {self.numbers}")
+        print(f"self.printed_nums: {self.printed_nums}")
+        print(f"self.answer: {self.answer}\n\n")
 
     def clicked_ac_button(self):
         # reset all variable if "AC" is clicked
@@ -488,13 +488,13 @@ class MyWindow(QMainWindow):
             self.label.setText("0")
             self.answer = None
 
-            # print("CLICKED C")
-            # print(f"self.temp_numbers: {self.temp_numbers}")
-            # print(f"self.numbers: {self.numbers}")
-            # print(f"self.printed_nums: {self.printed_nums}")
-            # print(f"self.last_operator_pressed: {self.last_operator_pressed}")
-            # print(f"self.old_printed_nums: {self.old_printed_nums}")
-            # print(f"self.answer: {self.answer}\n\n")
+            print("CLICKED C")
+            print(f"self.temp_numbers: {self.temp_numbers}")
+            print(f"self.numbers: {self.numbers}")
+            print(f"self.printed_nums: {self.printed_nums}")
+            print(f"self.last_operator_pressed: {self.last_operator_pressed}")
+            print(f"self.old_printed_nums: {self.old_printed_nums}")
+            print(f"self.answer: {self.answer}\n\n")
 
     def clicked_decimal(self):
         # add a decimal point when clicked if there isn't already a decimal
@@ -508,11 +508,11 @@ class MyWindow(QMainWindow):
             self.printed_nums = "".join(nums_with_commas) + "."
             self.label.setText(self.printed_nums)
 
-            # print("CLICKED DECIMAL")
-            # print(f"self.temp_numbers: {self.temp_numbers}")
-            # print(f"self.numbers: {self.numbers}")
-            # print(f"self.printed_nums: {self.printed_nums}")
-            # print(f"self.answer: {self.answer}\n\n")
+            print("CLICKED DECIMAL")
+            print(f"self.temp_numbers: {self.temp_numbers}")
+            print(f"self.numbers: {self.numbers}")
+            print(f"self.printed_nums: {self.printed_nums}")
+            print(f"self.answer: {self.answer}\n\n")
 
     def clicked_plus_minus(self):
         # if user presses plus/minus button before typing a second number following an operator button, display "-0" which will change to "-{user entered number}" once the user enters a number
@@ -524,6 +524,10 @@ class MyWindow(QMainWindow):
         if "-" in self.label.text():
             self.negative = False
             self.label.setText(self.label.text().replace("-", ""))
+            if self.answer:
+                self.answer = self.numbers = self.clean_printed_nums(self.label.text())
+            else:
+                self.printed_nums = self.label.text()
         else:
             # is number is positive, make it negative
             self.negative = True
@@ -532,14 +536,15 @@ class MyWindow(QMainWindow):
             else:
                 self.label.setText("-0")
             if self.answer:
-                self.numbers = -self.numbers
-                self.answer = self.numbers
+                self.answer = self.numbers = -self.numbers
+            else:
+                self.printed_nums = self.label.text()
 
-        # print("CLICKED PLUS/MINUS")
-        # print(f"self.temp_numbers: {self.temp_numbers}")
-        # print(f"self.numbers: {self.numbers}")
-        # print(f"self.printed_nums: {self.printed_nums}")
-        # print(f"self.answer: {self.answer}\n\n")
+        print("CLICKED PLUS/MINUS")
+        print(f"self.temp_numbers: {self.temp_numbers}")
+        print(f"self.numbers: {self.numbers}")
+        print(f"self.printed_nums: {self.printed_nums}")
+        print(f"self.answer: {self.answer}\n\n")
 
     def clicked_percentage(self):
         self.percentage_pressed = True
@@ -549,8 +554,17 @@ class MyWindow(QMainWindow):
             self.resize_label(self.printed_nums)
             self.label.setText(self.printed_nums)
             self.numbers = self.clean_printed_nums(self.printed_nums)
+            self.answer = self.numbers
             self.printed_nums = self.old_printed_nums
+
+            print("CLICKED PERCENTAGE No1")
+            print(f"self.temp_numbers: {self.temp_numbers}")
+            print(f"self.numbers: {self.numbers}")
+            print(f"self.printed_nums: {self.printed_nums}")
+            print(f"self.answer: {self.answer}\n\n")
+
             return
+
         # return number if number is 0 as it can't be divided
         if self.printed_nums in ["", "0", "0.", "0.0"]:
             return
@@ -583,11 +597,11 @@ class MyWindow(QMainWindow):
         self.resize_label(self.printed_nums)
         self.label.setText(self.printed_nums)
 
-        # print("CLICKED PERCENTAGE")
-        # print(f"self.temp_numbers: {self.temp_numbers}")
-        # print(f"self.numbers: {self.numbers}")
-        # print(f"self.printed_nums: {self.printed_nums}")
-        # print(f"self.answer: {self.answer}\n\n")
+        print("CLICKED PERCENTAGE No2")
+        print(f"self.temp_numbers: {self.temp_numbers}")
+        print(f"self.numbers: {self.numbers}")
+        print(f"self.printed_nums: {self.printed_nums}")
+        print(f"self.answer: {self.answer}\n\n")
 
     def clicked_divide(self):
         # calculate answer without having to click equals button after one of the operator buttons has been clicked atleast once
@@ -662,11 +676,11 @@ class MyWindow(QMainWindow):
             self.pressed_c_before_equation = False
             self.last_operator_pressed = None
 
-            # print("CLICKED EQUALS AFTER C IS PRESSED WITH NO ANSWER TO EQUATION PASSED")
-            # print(f"self.temp_numbers: {self.temp_numbers}")
-            # print(f"self.numbers: {self.numbers}")
-            # print(f"self.printed_nums: {self.printed_nums}")
-            # print(f"self.answer: {self.answer}\n\n")
+            print("CLICKED EQUALS AFTER C IS PRESSED WITH NO ANSWER TO EQUATION PASSED")
+            print(f"self.temp_numbers: {self.temp_numbers}")
+            print(f"self.numbers: {self.numbers}")
+            print(f"self.printed_nums: {self.printed_nums}")
+            print(f"self.answer: {self.answer}\n\n")
 
             return
 
@@ -707,13 +721,13 @@ class MyWindow(QMainWindow):
                 self.negative = False
                 self.operator_button_active = False
 
-                # print("CLICKED EQUALS")
-                # print(f"self.temp_numbers: {self.temp_numbers}")
-                # print(f"self.numbers: {self.numbers}")
-                # print(f"self.printed_nums: {self.printed_nums}")
-                # print(f"self.old_printed_nums: {self.old_printed_nums}")
-                # print(f"self.last_operator_pressed: {self.last_operator_pressed}")
-                # print(f"self.answer: {self.answer}\n\n")
+                print("CLICKED EQUALS")
+                print(f"self.temp_numbers: {self.temp_numbers}")
+                print(f"self.numbers: {self.numbers}")
+                print(f"self.printed_nums: {self.printed_nums}")
+                print(f"self.old_printed_nums: {self.old_printed_nums}")
+                print(f"self.last_operator_pressed: {self.last_operator_pressed}")
+                print(f"self.answer: {self.answer}\n\n")
     
     def reset_temp_numbers(self):
         # if user types over a number that's given as an answer to their previous equation, store the overwritten number in self.numbers to be used for the next equation
@@ -732,17 +746,28 @@ class MyWindow(QMainWindow):
         self.decimal = False
         self.negative = False
 
-        # print("RESET TEMP NUMBERS")
-        # print(f"self.temp_numbers: {self.temp_numbers}")
-        # print(f"self.numbers: {self.numbers}")
-        # print(f"self.printed_nums: {self.printed_nums}")
-        # print(f"self.answer: {self.answer}\n\n")
+        print("RESET TEMP NUMBERS")
+        print(f"self.temp_numbers: {self.temp_numbers}")
+        print(f"self.numbers: {self.numbers}")
+        print(f"self.printed_nums: {self.printed_nums}")
+        print(f"self.answer: {self.answer}\n\n")
 
     def convert_float_to_printed_nums(self, float_nums):
-        if "e" in str(float_nums):
-            float_nums = "{:e}".format(float_nums)
+
+        print("CONVERT FLOAT TO PRINTED NUMS")
+        print(f"float_nums: {float_nums}\n\n")
+
+        if (float_nums > 0 and (float_nums < 0.00000001 or float_nums > 999999999)) or (float_nums < 0 and (float_nums > -0.00000001 or float_nums < -999999999)):
+            self.printed_nums = "{:e}".format(float_nums)
+            return
+        elif "e" in str(float_nums):
+            self.printed_nums = "{:e}".format(float_nums)
+            return
         else:
             float_nums = "{:.8f}".format(float_nums)
+
+        print(f"float nums after conversion: {float_nums}\n\n")
+
         nums_before_rounding, _ = self.split_decimal_num(list(float_nums))
         if "-" in nums_before_rounding:
             # remove minus element so that it's not included in the length of the list figure used to round float_nums
@@ -758,6 +783,10 @@ class MyWindow(QMainWindow):
     def clean_printed_nums(self, nums):
         # if string shows number in scientific notation, keep the same
         if "e" in nums:
+
+            print("CLEAN PRINTED NUMS")
+            print(f"float(nums): {float(nums)}\n\n")
+
             return float(nums)
         # remove all added commas so that the number can be converted into float
         amended_nums = nums.replace(",", "")
@@ -779,9 +808,13 @@ class MyWindow(QMainWindow):
         return nums, decimals  
 
     def add_commas(self, nums):
+        minus = False
         # if number is in scientific notation, don't add commas
         if "e" in nums:
             return nums
+        if "-" in nums:
+            minus = True
+            nums.remove("-")
         # add comma 4 elements from the end of the list
         if len(nums) > 3 and nums.count(",") == 0:
             nums.insert(len(nums) - 3, ",")
@@ -798,6 +831,8 @@ class MyWindow(QMainWindow):
             index_pos_second = nums.index(",", 0, (len(nums) - 6))
             second_comma = nums.pop(index_pos_second)
             nums.insert(len(nums) - 7, second_comma)
+        if minus:
+            nums = ["-"] + nums
         return nums
 
     def resize_label(self, nums):
