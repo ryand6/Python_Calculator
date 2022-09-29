@@ -409,14 +409,15 @@ class MyWindow(QMainWindow):
         self.ac_button.setText("C")
         self.pressed_c_before_equation = False
 
-        if self.answer and self.equals_button_clicked and not self.operator_button_active and not self.pressed_c_after_equation:
+        if (self.answer or self.error) and self.equals_button_clicked and not self.operator_button_active and not self.pressed_c_after_equation:
             self.number_overwritten = True
+            self.error = False
 
         if self.percentage_pressed:
             self.percentage_pressed = False
             self.temp_numbers = []
 
-        if len(self.temp_numbers) == 0 and button.text() == "0":
+        if len(self.temp_numbers) == 0 and button.text() == "0" and self.printed_nums == "0":
             return
 
         # each time number is clicked, add a new number to self.temp_numbers whilst the length of the number is below the max length of 9 digits
@@ -683,7 +684,7 @@ class MyWindow(QMainWindow):
             operation_number = self.numbers
 
         # handle if equals is pressed again after "C" is pressed following
-        if self.pressed_c_after_equation:
+        if self.pressed_c_after_equation and not self.equals_button_clicked:
             if self.operator_pressed in ["subtract", "add"]:
                 self.numbers = 0 + self.numbers
             elif self.operator_pressed == "multiply":
@@ -694,6 +695,8 @@ class MyWindow(QMainWindow):
         
         # carry out operation depending on which operator was clicked
         if self.operator_pressed == "divide":
+            if operation_number == 0:
+                self.error = True
             divide_answer = self.numbers / operation_number if self.error == False else 0
         elif self.operator_pressed == "multiply":
             multiply_answer = self.numbers * operation_number
@@ -743,7 +746,7 @@ class MyWindow(QMainWindow):
                 self.negative = False
                 self.operator_button_active = False
         self.reset_operator_button_colour()
-        if self.pressed_c_after_equation:
+        if self.pressed_c_after_equation and not self.equals_button_clicked:
             self.operator_pressed = None
             self.pressed_c_after_equation = False
 
