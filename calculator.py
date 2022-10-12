@@ -679,9 +679,11 @@ class MyWindow(QMainWindow):
         if self.pressed_c_before_equation:
             self.numbers = 0
 
-        # handle if multiply or divide operator is pressed but then no following number is entered, and user then presses equals (multiplication should multiply answer by itself, division should divide answer by itself)
-        if self.operator_button_active and self.operator_pressed in ["multiply", "divide"]:
+        # handle if operator is pressed but then no following number is entered, and user then presses equals, answer should be operated on by itself
+        if self.operator_button_active:
             operation_number = self.numbers
+
+        self.reset_operator_button_colour()
 
         # handle if equals is pressed again after "C" is pressed following
         if self.pressed_c_after_equation and not self.equals_button_clicked:
@@ -744,8 +746,9 @@ class MyWindow(QMainWindow):
                 self.printed_nums = self.old_printed_nums
                 self.temp_numbers = []
                 self.negative = False
-                self.operator_button_active = False
-        self.reset_operator_button_colour()
+                if self.equals_button_clicked:
+                    self.operator_pressed = None
+
         if self.pressed_c_after_equation and not self.equals_button_clicked:
             self.operator_pressed = None
             self.pressed_c_after_equation = False
